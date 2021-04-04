@@ -32,7 +32,7 @@ export function getDownloadURL(version: string): string {
   }
 }
 
-const getLatestVersion = async (): Promise<string | null> => {
+export const getLatestVersion = async (): Promise<string | null> => {
   const octokit = new Octokit();
 
   const latestRelease = await octokit.repos.getLatestRelease({
@@ -79,17 +79,20 @@ export function findExecutable(rootFolder: string): string {
 export async function downloadTerragrunt(version: string): Promise<string> {
   core.info(`[INFO] Setting up Terragrunt version: '${version}'`);
 
+  let actualVersion = version;
+
   // Get latest version number and reassign version param to it.
   if (version.toLowerCase() === 'latest') {
     const latestVersion = await getLatestVersion();
-    version = latestVersion || '';
+    actualVersion = latestVersion || '';
+    core.info(`[INFO] Latest Terragrunt version: '${actualVersion}'`);
   }
 
   // See if we already have it installed
-  let cachedToolpath = toolCache.find(executableName, version);
+  let cachedToolpath = toolCache.find(executableName, actualVersion);
   if (!cachedToolpath) {
     let dlPath: string;
-    const dlURL = getDownloadURL(version);
+    const dlURL = getDownloadURL(actualVersion);
     core.info(`[INFO] Downloading from: '${dlURL}'`);
     try {
       dlPath = await toolCache.downloadTool(dlURL);
@@ -107,7 +110,7 @@ export async function downloadTerragrunt(version: string): Promise<string> {
       dlPath,
       executableName + getExecutableExtension(),
       executableName,
-      version
+      actualVersion
     );
   }
 
